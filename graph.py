@@ -28,14 +28,18 @@ N = TypeVar("N", bound=GenericNode)
 E = TypeVar("E", bound=GenericEdge)
 
 
-class GenericGraph(Protocol[N, E]):
-    graph: nx.MultiDiGraph
-    undir_graph_view: nx.MultiGraph
+class GenericGraph(Generic[N, E]):
     nodes: Dict[int, N]
     edges: Dict[int, E]
+    graph: nx.MultiDiGraph
+    undir_graph_view: nx.MultiGraph
 
     def __init__(self, nodes: Iterable[N], edges: Iterable[E]):
         self.graph = nx.MultiDiGraph()
+
+        # TODO(aneesh) why is the following line required?!
+        self.nodes = {}
+
         for node in nodes:
             self.graph.add_node(node.id)
             self.nodes[node.id] = node
@@ -50,13 +54,15 @@ class GenericGraph(Protocol[N, E]):
         return self.graph.out_edges(n.id, keys=True)
 
     def out_degree(self, n: N) -> int:
-        return len(self.graph.out_degree(n.id))
+        degree: int = self.graph.out_degree(n.id)
+        return degree
 
     def get_in_edges(self, n: N) -> nx.classes.reportviews.InMultiEdgeDataView:
         return self.graph.in_edges(n.id, keys=True)
 
     def in_degree(self, n: N) -> int:
-        return len(self.graph.in_degree(n.id))
+        degree: int = self.graph.in_degree(n.id)
+        return degree
 
     def count_connected_comopnents(self) -> int:
         nccs: int = nx.number_connected_components(self.undir_graph_view)
@@ -85,15 +91,7 @@ class Edge:
     # TODO undirected/var length edges
 
 
-class InputGraph(GenericGraph[Node, Edge]):
-    pass
-
-
-@dataclass
-class PatternEdge:
-    id: int
-    src: PatternNode
-    dst: PatternNode
+InputGraph = GenericGraph[Node, Edge]
 
 
 @dataclass
@@ -103,5 +101,11 @@ class PatternNode:
     is_subgraph: bool
 
 
-class PatternGraph(GenericGraph[PatternNode, PatternEdge]):
-    pass
+@dataclass
+class PatternEdge:
+    id: int
+    src: PatternNode
+    dst: PatternNode
+
+
+PatternGraph = GenericGraph[PatternNode, PatternEdge]
