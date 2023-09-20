@@ -16,6 +16,19 @@ class PanicErrorListener(ErrorListener_):
             "Syntax error at line {} col {}: {}".format(line, col, msg)
         )
 
+def patternGraphToNetworkXGraph(pgraph: spycy.pattern_graph.Graph) -> spycy.NetworkXGraph:
+    graph = spycy.NetworkXGraph()
+
+    assert len(pgraph.paths) == 0
+    node_to_networkx_node = {}
+    for node, data in pgraph.nodes.items():
+        node_to_networkx_node[node] = graph.add_node(data.__dict__)
+
+    for edge in pgraph.edges.values():
+        graph.add_edge(node_to_networkx_node[edge.start],
+                       node_to_networkx_node[edge.end], edge.__dict__)
+    return graph
+
 
 def getPatternGraph(pattern) -> spycy.NetworkXGraph:
     # Setup the cypher parser
@@ -32,16 +45,6 @@ def getPatternGraph(pattern) -> spycy.NetworkXGraph:
     # Parse a pattern graph
     root = parser.oC_Pattern()
 
-    graph = spycy.NetworkXGraph()
-
     # Use spycy to convert it into a python object
     pgraph = spycy.ConcreteExpressionEvaluator.interpret_pattern(root)
-    assert len(pgraph.paths) == 0
-    node_to_networkx_node = {}
-    for node, data in pgraph.nodes.items():
-        node_to_networkx_node[node] = graph.add_node(data.__dict__)
-
-    for edge in pgraph.edges.values():
-        graph.add_edge(node_to_networkx_node[edge.start],
-                       node_to_networkx_node[edge.end], edge.__dict__)
-    return graph
+    return patternGraphToNetworkXGraph(pgraph)
