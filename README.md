@@ -33,26 +33,42 @@ for potentially faster execution plans.
 With `GExp` this pattern could be extracted as:
 
 ```
-G1-e-G2
+(G_1)--(G_2)
 ```
 
-Where `G` represents some subgraph, and `G<n>` represents a subgraph ismorphic
-to `G`. If `GExp` matches `G1-e-G2` against the cypher query above, it could
+Where `G` represents some subgraph, and `G_<n>` represents a subgraph ismorphic
+to `G`. If `GExp` matches `(G_1)-[e]-(G_2)` against the cypher query above, it could
 resolve the expression as:
 
 ```
-G1 = a, b, c
-G2 = d, e, f
+G_1 = a, b, c
+G_2 = d, e, f
 e = a-->d
 ```
+
+Thus, by using `GExp` one could easily test if a certain query graph matches a
+known optimized matching routine.
 
 Another possible usecase could be to implement a kind of `grep` for graph query
 files allowing one to search a set of queries for specific subgraphs to explore
 how relevant matching a certain kind of graph is across a set of queries.
 
-## Planned features
+A less defined, but also potentially useful outcome could be to find some kind
+of "golfed" representation of the graph. This could be useful for implementing
+some kind of common subexpression elimination type pass over queries.
 
-node/edge capturing
-Subgraph capturing
-optional edges/subgraphs
+## Project Status
+
+### What's implemented
+
++ Basic matching of subgraphs (crashes if the pattern doesn't match)
+
+### Planned features
+
++ predicates on edges/nodes
++ node/edge capturing
++ Subgraph capturing
++ Some kind of repeat operator
++ optional edges/subgraphs
++ performance
 
