@@ -6,19 +6,21 @@ from .graph import getPatternGraph
 from spycy import spycy
 import networkx as nx
 
-def isIsomorphic(graph: spycy.NetworkXGraph, subgraph_a: Set[int],
+def isIsomorphic(graph: nx.MultiDiGraph, subgraph_a: Set[int],
                  subgraph_b: Set[int]) -> bool:
-    return False
+    graph_a = graph.subgraph(subgraph_a)
+    graph_b = graph.subgraph(subgraph_b)
+    return nx.is_isomorphic(graph_a, graph_b)
 
 
-def match(pattern: spycy.NetworkXGraph, graph: spycy.NetworkXGraph) -> bool:
+def match(pattern: nx.MultiDiGraph, graph: nx.MultiDiGraph) -> bool:
     res = False
 
     def get_connected_components(graph: nx.MultiDiGraph) -> List[Set[int]]:
         return [cc for cc in nx.weakly_connected_components(graph)]
 
-    pattern_ccs = get_connected_components(pattern._graph)
-    input_ccs = get_connected_components(graph._graph)
+    pattern_ccs = get_connected_components(pattern)
+    input_ccs = get_connected_components(graph)
     if len(pattern_ccs) != len(input_ccs):
         return res
 
@@ -43,16 +45,28 @@ def match(pattern: spycy.NetworkXGraph, graph: spycy.NetworkXGraph) -> bool:
         return False
 
     # Copy the graph and check that it succeeded
-    original_graph = graph._graph.copy()
-    assert isinstance(original_graph, nx.MultiDiGraph)
-    try:
-        # TODO bind edges and call match recursively
-        return res
-    finally:
-        graph._graph = original_graph
+    pattern_edges = [edge for edge in pattern.edges]
+    for edge in pattern_edges:
+        pattern.remove_edge(*edge)
+
+    for edge_list in itertools.permutations(graph.edges, len(pattern_edges)):
+        original_graph = graph.copy()
+        assert isinstance(original_graph, nx.MultiDiGraph)
+
+        for edge in edge_list:
+            graph.remove_edge(*edge)
+        if match(pattern, graph):
+            return True
+
+        graph = original_graph
+    return False
+
+
+def removeWhitespace(s: str):
+    return ''.join(s.split())
 
 
 def GExpMatch(pattern: str, inp: str) -> bool:
-    pattern_graph = getPatternGraph(pattern)
-    input_graph = getPatternGraph(inp)
-    return match(pattern_graph, input_graph)
+    pattern_graph = getPatternGraph(removeWhitespace(pattern))
+    input_graph = getPatternGraph(removeWhitespace(inp))
+    return match(pattern_graph._graph, input_graph._graph)
